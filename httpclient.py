@@ -45,15 +45,18 @@ class HTTPClient(object):
         return None
 
     def get_code(self, data):
-        code = data.split(' ')
-        code = code[1]
+        code = data.split(' ')[1]
         return code 
 
     def get_headers(self,data):
-        return None
+        data = data.split('\n',1)[1]
+        header = data.split('\r\n\r\n')[0]
+        return header
 
     def get_body(self, data):
-        return None
+        data = data.split('\n',1)[1]
+        body = data.split('\r\n\r\n')[1]
+        return body
     
     def sendall(self, data):
         self.socket.sendall(data.encode('utf-8'))
