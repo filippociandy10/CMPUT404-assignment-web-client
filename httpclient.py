@@ -97,6 +97,8 @@ class HTTPClient(object):
         code = self.get_code(res)
         body = self.get_body(res)
         self.close()
+        print('Code:', code)
+        print('Body:', body)
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
@@ -117,6 +119,8 @@ class HTTPClient(object):
         code = self.get_code(res)
         body = self.get_body(res)
         self.close()
+        print('Code:', code)
+        print('Body:', body)
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
