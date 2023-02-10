@@ -22,7 +22,7 @@ import sys
 import socket
 import re
 # you may use urllib to encode data appropriately
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 
 def help():
     print("httpclient.py [GET/POST] [URL]\n")
@@ -39,13 +39,21 @@ class HTTPClient(object):
         port = parsed_url.port
         path = parsed_url.path
 
+        if port == None:
+            port = 80
+
+        if not path.endswith('/'):
+            path = path + '/' 
+
+        return [hostname, port, path]
+
     def connect(self, host, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((host, port))
         return None
 
     def get_code(self, data):
-        code = data.split(' ')[1]
+        code = int(data.split(' ')[1])
         return code 
 
     def get_headers(self,data):
@@ -77,16 +85,37 @@ class HTTPClient(object):
         return buffer.decode('utf-8')
 
     def GET(self, url, args=None):
-        ok_200 = 200
-        notfound_404 = 404
-
-        code = 500
-        body = ""
+        try:
+            parsed_url = self.get_host_port(url)
+        except:
+            print('parsed url error!')
+        header = 'GET {path} HTTP/1.1\r\nHost:{host}:{port}\r\nConnection: close\r\n\r\n'.format(path=parsed_url[2],host=parsed_url[0],port=parsed_url[1])
+        self.connect(parsed_url[0], parsed_url[1])
+        self.sendall(header)
+        res = self.recvall(self.socket)
+        code = self.get_code(res)
+        body = self.get_body(res)
+        self.close()
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
-        code = 500
-        body = ""
+        try:
+            parsed_url = self.get_host_port(url)
+        except:
+            print('parsed url error!')
+        if args == None:
+            args_content = ''
+            args_len = 0
+        else:
+            args_content = urlencode(args)
+            args_len = len(args_content)
+        header = 'POST {path} HTTP/1.1\r\nHost:{host}:{port}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length:{content}\r\nConnection: close\r\n\r\n{args}\r\n\r\n'.format(path=parsed_url[2],host=parsed_url[0],port=parsed_url[1],args=args_content,content=args_len)
+        self.connect(parsed_url[0], parsed_url[1])
+        self.sendall(header)
+        res = self.recvall(self.socket)
+        code = self.get_code(res)
+        body = self.get_body(res)
+        self.close()
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
